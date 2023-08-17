@@ -19,6 +19,15 @@ const app = new App({
 const NerdGraph = require('newrelic-nerdgraph-client');
 const nrApp = new NerdGraph(NR_API_KEY)
 
+async function getPeerCallstats(peerId: string): Promise<string> {
+    const {data} = await axios.get(
+        CALLSTATS_PEER_REPORT + peerId,
+        {headers: {"Authorization": `Bearer ${CALLSTATS_TOKEN}`}}
+    )
+
+    return JSON.stringify(data.data.peerReport)
+}
+
 app.command("/findit", async ({client, respond, ack, payload}) => {
     await ack()
     console.log("Findit: sent ack")
@@ -37,25 +46,28 @@ app.command("/findit", async ({client, respond, ack, payload}) => {
     const res = await client.chat.postMessage(
         {
           channel: process.env.GENERAL_CHANNEL!,
-          text: "Hii"
+          text: "Callstats for PeerId: " + payload.text + " :thread:",
         }
     )
 
-    await client.chat.postMessage(
-        {
-          channel: res.channel!,
-          thread_ts: res.ts,
-          text: "Hi there!"
-        }
-    )
+    const reply = await getPeerCallstats(payload.text)
+
+    // await client.chat.postMessage(
+    //     {
+    //       channel: res.channel!,
+    //       thread_ts: res.ts,
+    //       text: reply
+    //     }
+    // )
 
     //console.log(payload)
 
-    // await client.files.uploadV2({
-    //   filename: `peer_reports_${PEER_ID}.json`,
-    //   content: JSON.stringify({data: 1}),
-    //   channel_id: payload.channel_id.toString()
-    // });
+    await client.files.uploadV2({
+      filename: `peer_reports_${payload.text}.json`,
+      content: reply,
+      channel_id: res.channel,
+      thread_ts: res.ts
+    });
 
     console.log("Findit: sent response")
 });
@@ -119,6 +131,8 @@ app.command("/newrelic", async ({client, respond, ack, context}) => {
 // }
 //
 // test()
+
+
 
 app.start().catch((error) => {
     console.error(error);
