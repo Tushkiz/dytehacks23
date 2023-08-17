@@ -1,0 +1,16 @@
+{
+  "name": "slack-bot",
+  "version": "1.0.0",
+  "description": "",
+  "scripts": {
+    "start": "ts-node index.ts"
+  },
+  "dependencies": {
+    "@slack/bolt": "^3.13.3",
+    "dotenv": "^16.3.1",
+    "ts-node": "^10.9.1"
+  },
+  "keywords": [],
+  "author": "Dyte",
+  "license": "ISC"
+}
