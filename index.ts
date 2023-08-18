@@ -105,6 +105,21 @@ app.command("/finditfenil", async ({context, ack, payload}) => {
 
 });
 
+app.command("/live-support-rotation", async ({client, ack, payload}) => {
+    await ack()
+
+    const res = await client.conversations.info({
+        channel: process.env.GENERAL_CHANNEL!
+    })
+
+    await client.chat.postMessage(
+        {
+            channel: payload.channel_id,
+            text: res.channel!.topic!.value
+        }
+    )
+});
+
 app.command(
     "/callstats",
     async ({client, ack, payload}) => {
