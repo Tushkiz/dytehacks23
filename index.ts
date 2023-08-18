@@ -49,46 +49,64 @@ async function getPeerCallstats(peerId: string): Promise<string> {
   return JSON.stringify(data.data.peerReport, null, "\t");
 }
 
-app.command("/findit", async ({ client, respond, ack, payload }) => {
+app.command("/finditfenil", async ({ context, ack, payload }) => {
   await ack();
-  console.log("Findit: sent ack");
-  // const res = await respond({
-  //     blocks: [
-  //         {
-  //             "type": "section",
-  //             "text": {
-  //                 "type": "mrkdwn",
-  //                 "text": `NO!!!!`
-  //             }
-  //         },
-  //     ],
-  //     response_type: "in_channel", // change to "in_channel" to make it visible to others
-  // });
-  const res = await client.chat.postMessage({
-    channel: process.env.GENERAL_CHANNEL!,
-    text: "Callstats for PeerId: " + payload.text + " :thread:",
-  });
 
-  const reply = await getPeerCallstats(payload.text);
+  try {
+    const pload: any = payload;
+    let channel_name = await get_channel_name(pload.channel);
 
-  // await client.chat.postMessage(
-  //     {
-  //       channel: res.channel!,
-  //       thread_ts: res.ts,
-  //       text: reply
-  //     }
-  // )
+    const channel_name_processed = `<slack://channel?team=${context.teamId}&id=${pload.channel}| #${channel_name}>`;
+    const mainMessage = await app.client.chat.postMessage({
+      channel: process.env.GENERAL_CHANNEL!,
+      mrkdwn: true,
+      text:
+        "[" + channel_name_processed + "]\n\n" + pload.text
+    });
 
-  //console.log(payload)
+    // start threading details
+    if (pload.text && pload.text !== "") {
+      let ids = pload.text.match(/[a-z0-9]*-[-a-z0-9]*/g) as string[];
+      const resultPromises = ids.map(async (id: string) => {
+        let res;
 
-  await client.files.uploadV2({
-    filename: `peer_reports_${payload.text}.json`,
-    content: reply,
-    channel_id: res.channel,
-    thread_ts: res.ts,
-  });
+        res = await queryNewRelicForPeerId(id);
+        if (res) return res;
 
-  console.log("Findit: sent response");
+        res = await queryNewRelicForSessionId(id);
+        if (res) return res;
+
+        if (id.startsWith("aaa")) {
+          res = queryNewRelicForUserId(id);
+          if (res) return res;
+        }
+
+        if (id.startsWith("bbb")) {
+          res = queryNewRelicForRoomName(id);
+          if (res) return res;
+        }
+
+        res = await queryNewRelicForOrgId(id);
+        if (res) return res;
+
+        return null;
+      });
+
+      const rawResults = await Promise.all(resultPromises);
+      const results = rawResults.filter((res) => res !== null);
+      if (results.length !== 0) {
+        await app.client.chat.postMessage({
+          channel: mainMessage.channel!,
+          thread_ts: mainMessage.ts,
+          text: JSON.stringify(results, null, '\t'),
+        });
+      }
+    }
+  } catch (error) {
+    console.log("err");
+    console.error(error);
+  }
+
 });
 
 app.command(
@@ -112,7 +130,7 @@ app.command("/newrelic", async ({ client, ack, payload }) => {
 
   const res = await queryNewRelic(payload.text)
   await client.chat.postMessage({
-    channel: payload.channel!,
+    channel: payload.channel_id!,
     text: JSON.stringify(res, null, '\t'),
   });
 });
@@ -124,7 +142,7 @@ app.command("/peerId", async ({ client, ack, payload }) => {
 
   const res = await queryNewRelicForPeerId(peerId)
   await client.chat.postMessage({
-    channel: payload.channel!,
+    channel: payload.channel_id!,
     text: JSON.stringify(res, null, '\t'),
   });
 })
@@ -136,7 +154,7 @@ app.command("/meetingId", async ({ client, ack, payload }) => {
 
   const res = await queryNewRelicForRoomName(roomName)
   await client.chat.postMessage({
-    channel: payload.channel!,
+    channel: payload.channel_id!,
     text: JSON.stringify(res, null, '\t'),
   });
 })
@@ -148,19 +166,20 @@ app.command("/organizationId", async ({ client, ack, payload }) => {
 
   const res = await queryNewRelicForOrgId(orgId)
   await client.chat.postMessage({
-    channel: payload.channel!,
+    channel: payload.channel_id!,
     text: JSON.stringify(res, null, '\t'),
   });
 })
 
-app.command("/userId", async ({ client, ack, payload }) => {
+app.command("/userId", async ({ client, ack, payload, command }) => {
   await ack()
 
   const [userId] = payload.text.split(" ");
 
   const res = await queryNewRelicForUserId(userId)
+
   await client.chat.postMessage({
-    channel: payload.channel!,
+    channel: payload.channel_id!,
     text: JSON.stringify(res, null, '\t'),
   });
 })
@@ -172,7 +191,7 @@ app.command("/sessionId", async ({ client, ack, payload }) => {
 
   const res = await queryNewRelicForSessionId(sessionId)
   await client.chat.postMessage({
-    channel: payload.channel!,
+    channel: payload.channel_id!,
     text: JSON.stringify(res, null, '\t'),
   });
 })
