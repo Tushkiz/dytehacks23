@@ -142,7 +142,18 @@ app.command("/newrelic", async ({client, respond, ack, context}) => {
 //
 // test()
 
+async function query_nr(query: string): Promise<any> {
+    const options = {
+        account: 3360475,
+        query: query
+    };
+
+    return nrApp.query(options)
+}
+
 app.message(/.*/, async ({context, payload}) => {
+    if (payload.channel == process.env.GENERAL_CHANNEL!) return
+
     try {
         const pload: any = payload
         const has_files = (pload.files != null)
@@ -167,20 +178,39 @@ app.message(/.*/, async ({context, payload}) => {
             }
         )
 
-        await app.client.chat.postMessage(
-            {
-                channel: res.channel,
-                thread_ts: res.ts,
-                text: "Hi :wave:"
-            }
-        )
+        if (pload.text != null && pload.text != "") {
+            let ids = pload.text.match(/[a-z0-9]*-[-a-z0-9]*/g)
+            ids.forEach(async (id: string) => {
+                let res
+                if (id.startsWith("aaa")) {
+                    console.log("meetingMetadata.userId")
+                    // roomName, orgId, peerId, sdk, etc
+                } else if (id.startsWith("bbb")) {
+                    console.log("meetingMetadata.roomName")
+                } else {
+                    res = await query_nr(`SELECT * FROM Log WHERE meetingMetadata.peerId='${id}' SINCE 24 HOURS AGO LIMIT 1`)
+                    if (res.length !== 0) {
+                        console.log("meetingMetadata.peerId")
+                    } else {
+                        res = await query_nr(`SELECT * FROM Log WHERE meetingMetadata.organizationId='${id}' SINCE 24 HOURS AGO LIMIT 1`)
+                        if (res.length !== 0) {
+                            console.log("meetingMetadata.orgId")
+                        } else {
+                            console.log("sessionId")
+                        }
+                    }
+                }
+            })
+        }
 
-        // await app.client.files.uploadV2({
-        //     filename: `peer_reports_${payload.text}.json`,
-        //     content: reply,
-        //     channel_id: payload.channel,
-        //     thread_ts: payload.ts
-        // });
+
+        // await app.client.chat.postMessage(
+        //     {
+        //         channel: res.channel,
+        //         thread_ts: res.ts,
+        //         text: "Hi :wave:"
+        //     }
+        // )
     } catch (error) {
         console.log("err")
         console.error(error);
