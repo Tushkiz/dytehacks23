@@ -11,6 +11,7 @@ import {
     queryNewRelicForUserId,
 } from "./lib/queryForId";
 import {getEnvVars} from "./lib/getEnvVars";
+import { formatJsonBlock } from "./lib/formatJson";
 
 enum ID_TYPE {
     ORG_ID,
@@ -88,7 +89,7 @@ app.command("/finditfenil", async ({context, ack, payload}) => {
             if (results.length !== 0) {
                 await app.client.chat.postMessage({
                     channel: payload.channel_id!,
-                    text: JSON.stringify(results, null, '\t'),
+                    blocks: formatJsonBlock(results)
                 });
             }
         } else {
@@ -142,7 +143,7 @@ app.command("/newrelic", async ({client, ack, payload}) => {
     const res = await queryNewRelic(payload.text)
     await client.chat.postMessage({
         channel: payload.channel_id!,
-        text: JSON.stringify(res, null, '\t'),
+        blocks: formatJsonBlock(res)
     });
 });
 
@@ -154,7 +155,7 @@ app.command("/peerId", async ({client, ack, payload}) => {
     const res = await queryNewRelicForPeerId(peerId)
     await client.chat.postMessage({
         channel: payload.channel_id!,
-        text: JSON.stringify(res, null, '\t'),
+        blocks: formatJsonBlock(res),
     });
 })
 
@@ -166,7 +167,7 @@ app.command("/meetingId", async ({client, ack, payload}) => {
     const res = await queryNewRelicForRoomName(roomName)
     await client.chat.postMessage({
         channel: payload.channel_id!,
-        text: JSON.stringify(res, null, '\t'),
+        blocks: formatJsonBlock(res),
     });
 })
 
@@ -178,7 +179,7 @@ app.command("/organizationId", async ({client, ack, payload}) => {
     const res = await queryNewRelicForOrgId(orgId)
     await client.chat.postMessage({
         channel: payload.channel_id!,
-        text: JSON.stringify(res, null, '\t'),
+        blocks: formatJsonBlock(res)
     });
 })
 
@@ -191,7 +192,7 @@ app.command("/userId", async ({client, ack, payload, command}) => {
 
     await client.chat.postMessage({
         channel: payload.channel_id!,
-        text: JSON.stringify(res, null, '\t'),
+        blocks: formatJsonBlock(res)
     });
 })
 
@@ -203,7 +204,7 @@ app.command("/sessionId", async ({client, ack, payload}) => {
     const res = await queryNewRelicForSessionId(sessionId)
     await client.chat.postMessage({
         channel: payload.channel_id!,
-        text: JSON.stringify(res, null, '\t'),
+        blocks: formatJsonBlock(res)
     });
 })
 
@@ -266,7 +267,7 @@ app.message(/.*/, async ({context, payload}) => {
                 await app.client.chat.postMessage({
                     channel: mainMessage.channel!,
                     thread_ts: mainMessage.ts,
-                    text: JSON.stringify(results, null, '\t'),
+                    blocks: formatJsonBlock(results)
                 });
             }
         }
