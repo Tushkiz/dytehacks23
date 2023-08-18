@@ -2,6 +2,7 @@ import axios from "axios";
 
 require('dotenv').config();
 import {App} from "@slack/bolt";
+import { getOrgStats, getOrgs } from "./orgsinfo";
 
 const SLACK_APP_TOKEN = process.env.SLACK_APP_TOKEN!;
 const SLACK_BOT_TOKEN = process.env.SLACK_BOT_TOKEN!;
