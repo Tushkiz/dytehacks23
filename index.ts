@@ -93,7 +93,7 @@ app.command("/findit", async ({ client, respond, ack, payload }) => {
 
 app.command(
   "/callstats",
-  async ({ client, respond, ack, context, payload, body }) => {
+  async ({ client, ack, payload }) => {
     await ack();
     const [peerId] = payload.text.split(" ");
     const reply = await getPeerCallstats(peerId);
@@ -107,25 +107,75 @@ app.command(
   }
 );
 
-app.command("/newrelic", async ({ client, respond, ack, context }) => {
-  // const { data } = await axios.get(
-  //     "https://api.newrelic.com/graphql",
-  //     {
-  //         headers: {"API-Key": NR_API_KEY},
-  //         data: {
-  //             "query": "{\n   actor {\n      account(id: 3360475) {\n         nrql(query: \"SELECT * FROM Log where meetingMetadata.organizationId='7dddae64-5a93-4650-9eb0-1657d23d0bee' and metadata.error.kind='screenshare' and meetingMetadata.deviceInfo.osName='macOS' AND meetingMetadata.visitedUrl not like '%one_to_one%' SINCE 1 day AGO\") {\n            results\n         }\n      }\n   }\n}",
-  //             "variables": ""
-  //         }}
-  // )
-  // console.log(data)
-  // await client.files.uploadV2({
-  //     filename: `peer_reports_${PEER_ID}.json`,
-  //     content: JSON.stringify(data.data.peerReport),
-  //     channel_id: process.env.GENERAL_CHANNEL,
-  // });
+app.command("/newrelic", async ({ client, ack, payload }) => {
+  await ack()
 
-  await ack();
+  const res = await queryNewRelic(payload.text)
+  await client.chat.postMessage({
+    channel: payload.channel!,
+    text: JSON.stringify(res, null, '\t'),
+  });
 });
+
+app.command("/peerId", async ({ client, ack, payload }) => {
+  await ack()
+
+  const [peerId] = payload.text.split(" ");
+
+  const res = await queryNewRelicForPeerId(peerId)
+  await client.chat.postMessage({
+    channel: payload.channel!,
+    text: JSON.stringify(res, null, '\t'),
+  });
+})
+
+app.command("/meetingId", async ({ client, ack, payload }) => {
+  await ack()
+
+  const [roomName] = payload.text.split(" ");
+
+  const res = await queryNewRelicForRoomName(roomName)
+  await client.chat.postMessage({
+    channel: payload.channel!,
+    text: JSON.stringify(res, null, '\t'),
+  });
+})
+
+app.command("/organizationId", async ({ client, ack, payload }) => {
+  await ack()
+
+  const [orgId] = payload.text.split(" ");
+
+  const res = await queryNewRelicForOrgId(orgId)
+  await client.chat.postMessage({
+    channel: payload.channel!,
+    text: JSON.stringify(res, null, '\t'),
+  });
+})
+
+app.command("/userId", async ({ client, ack, payload }) => {
+  await ack()
+
+  const [userId] = payload.text.split(" ");
+
+  const res = await queryNewRelicForUserId(userId)
+  await client.chat.postMessage({
+    channel: payload.channel!,
+    text: JSON.stringify(res, null, '\t'),
+  });
+})
+
+app.command("/sessionId", async ({ client, ack, payload }) => {
+  await ack()
+
+  const [sessionId] = payload.text.split(" ");
+
+  const res = await queryNewRelicForSessionId(sessionId)
+  await client.chat.postMessage({
+    channel: payload.channel!,
+    text: JSON.stringify(res, null, '\t'),
+  });
+})
 
 app.message(/.*/, async ({ context, payload }) => {
   if (payload.channel == process.env.GENERAL_CHANNEL!) return;
