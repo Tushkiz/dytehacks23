@@ -19,7 +19,9 @@ interface User {
 }
 
 interface Org {
-    name: String
+    name: string,
+    id: string,
+    accessToken: string
 }
 
 export function getOrgs() {
