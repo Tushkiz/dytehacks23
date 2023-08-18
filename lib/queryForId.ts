@@ -107,10 +107,10 @@ export async function queryNewRelicForErrors(id: string) {
 
 export async function queryNewRelic(query: string): Promise<any> {
     const options = {
-        account: getEnvVars().NR_API_KEY,
+        account: getEnvVars().NR_ACCOUNT_ID,
         query: query
     };
 
-    const res = nrApp.query(options);
+    const res = await nrApp.query(options);
     if (res.length !== 0) return res[0];
 }
