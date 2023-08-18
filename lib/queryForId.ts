@@ -1,4 +1,5 @@
 import { getEnvVars } from "./getEnvVars";
+import { getOrgStats, getOrgs } from "../orgsinfo"
 
 const NerdGraph = require('newrelic-nerdgraph-client');
 const nrApp = new NerdGraph(getEnvVars().NR_API_KEY)
@@ -18,13 +19,24 @@ function formatDate(date: string) {
 }
 
 export async function queryNewRelicForOrgId(id: string) {
-    const res = await queryNewRelic(`SELECT * FROM Log WHERE meetingMetadata.peerId='${id}' SINCE 24 HOURS AGO LIMIT ${LOG_LIMIT}`);
-    if (!res) return null;
-    // stats
-    return {
+    const allOrgs = await getOrgs()
+    const result: any = {
         type: 'organization',
-
     }
+
+    if (allOrgs) {
+        const org = allOrgs.find(o => o.id === id);
+        if (org) {
+            result.orgName = org.name;
+            const { totalSessions, totalMinutes, totalRecordingMinutes } = await getOrgStats(org.id, org.accessToken);
+            result.totalSessions = totalSessions;
+            result.totalMinutes = totalMinutes;
+            result.totalRecordingMinutes = totalRecordingMinutes;
+        }
+        // stats
+        return result;
+    }
+    return null;
 }
 
 export async function queryNewRelicForRoomName(id: string) {

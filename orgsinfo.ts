@@ -46,16 +46,11 @@ export function getOrgs() {
         mode: "cors",
         credentials: "include"
     };
-    
-    axios
+
+    return axios
             .request(options)
             .then(function ({ data }: {data: Response}) {
-                console.log(data);
-                console.log(data.data.loggedUser.name)
-                for (let org of data.data.loggedUser.ownedOrgs) {
-                    console.log(org);
-                }
-                console.log(data.data.loggedUser.ownedOrgs.length)
+                return data.data.loggedUser.ownedOrgs
             })
             .catch(function (error: any) {
                 console.error(error);
@@ -86,10 +81,10 @@ export function getOrgStats(orgId: string, apikey: string) {
         mode: "cors",
         credentials: "include"
     };
-    axios
+    return axios
             .request(options)
             .then(function ({ data }) {
-                console.log(data);
+                return data;
             })
             .catch(function (error: any) {
                 console.error(error);
