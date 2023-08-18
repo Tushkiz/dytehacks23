@@ -19,6 +19,7 @@ function formatDate(date: string) {
 
 export async function queryNewRelicForOrgId(id: string) {
     const res = await queryNewRelic(`SELECT * FROM Log WHERE meetingMetadata.peerId='${id}' SINCE 24 HOURS AGO LIMIT ${LOG_LIMIT}`);
+    if (!res) return null;
     // stats
     return {
         type: 'organization',
@@ -28,6 +29,7 @@ export async function queryNewRelicForOrgId(id: string) {
 
 export async function queryNewRelicForRoomName(id: string) {
     const res = await queryNewRelic(`SELECT * FROM Log WHERE meetingMetadata.roomName='${id}' SINCE 24 HOURS AGO LIMIT ${LOG_LIMIT}`);
+    if (!res) return null;
     return {
         type: 'room',
         meetingId: res['meetingMetadata.roomName'],
@@ -37,6 +39,7 @@ export async function queryNewRelicForRoomName(id: string) {
 
 export async function queryNewRelicForSessionId(id: string) {
     const res = await queryNewRelic(`SELECT * FROM Log WHERE metadata.params.sessionId='${id}' SINCE 24 HOURS AGO LIMIT 1`)
+    if (!res) return null;
     return {
         type: 'session',
         sessionId: id,
@@ -50,6 +53,7 @@ export async function queryNewRelicForSessionId(id: string) {
 
 export async function queryNewRelicForPeerId(id: string) {
     const res = await queryNewRelic(`SELECT * FROM Log WHERE meetingMetadata.peerId='${id}' SINCE 24 HOURS AGO LIMIT ${LOG_LIMIT}`);
+    if (!res) return null;
     let details: any = {
         type: 'peer',
         peerId: id,
@@ -86,6 +90,7 @@ export async function queryNewRelicForPeerId(id: string) {
 
 export async function queryNewRelicForUserId(id: string) {
     const res = await queryNewRelic(`SELECT * FROM Log WHERE metadata.params.userId='${id}' SINCE 24 HOURS AGO LIMIT ${LOG_LIMIT}`);
+    if (!res) return null;
     return {
         type: 'user',
         userId: id,
@@ -102,6 +107,7 @@ export async function queryNewRelicForUserId(id: string) {
 
 export async function queryNewRelicForErrors(id: string) {
     const res = await queryNewRelic(`SELECT message FROM Log WHERE allColumnSearch('${id}', insensitive: true) WHERE level = 'error' OR level = 'ERROR' SINCE 1 day ago`)
+    if (!res) return null;
     return res;
 }
 
@@ -112,5 +118,9 @@ export async function queryNewRelic(query: string): Promise<any> {
     };
 
     const res = await nrApp.query(options);
-    if (res.length !== 0) return res[0];
+    if (res.length === 1) {
+        return res[0];
+    }
+
+    return null;
 }
