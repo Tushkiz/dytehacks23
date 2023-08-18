@@ -8,43 +8,92 @@ const SLACK_BOT_TOKEN = process.env.SLACK_BOT_TOKEN!;
 const CALLSTATS_PEER_REPORT = process.env.CALLSTATS_PEER_REPORT!;
 const CALLSTATS_TOKEN = process.env.CALLSTATS_TOKEN!;
 const PEER_ID = process.env.PEER_ID!;
+const DEV_PORTAL = process.env.DEV_PORTAL
 
-const app = new App({
-    appToken: SLACK_APP_TOKEN,
-    token: SLACK_BOT_TOKEN,
-    socketMode: true,
-});
 
-app.command("/findit", async ({client, respond}) => {
-    await respond({
-        blocks: [
-            {
-                "type": "section",
-                "text": {
-                    "type": "mrkdwn",
-                    "text": `NO!!!!`
+interface Response {
+	data: UserWrapper;
+}
+
+interface UserWrapper {
+    loggedUser: User
+}
+
+interface User {
+    id: string,
+    name: string,
+    ownedOrgs: Org[]
+}
+
+interface Org {
+    name: String
+}
+
+getOrgs()
+
+
+// axios.post({
+//     url: "https://api.dyte.io/graphql",
+//     headers: {
+//       accept: "*/*",
+//       "accept-language": "en-GB,en-US;q=0.9,en;q=0.8",
+//       authorization:
+//         `Bearer ${DEV_PORTAL}`,
+//       "cache-control": "no-cache",
+//       "content-type": "application/json",
+//       pragma: "no-cache",
+//       "sec-ch-ua":
+//         '"Not/A)Brand";v="99", "Google Chrome";v="115", "Chromium";v="115"',
+//       "sec-ch-ua-mobile": "?0",
+//       "sec-ch-ua-platform": '"macOS"',
+//       "sec-fetch-dest": "empty",
+//       "sec-fetch-mode": "cors",
+//       "sec-fetch-site": "same-site",
+//     },
+//     referrer: "https://dev.dyte.io/",
+//     referrerPolicy: "strict-origin-when-cross-origin",
+//     body: '{"query":"\\n    query {\\n        loggedUser {\\n            id\\n            name\\n            ownedOrgs {\\n                id\\n                name\\n                accessToken\\n            }\\n        }\\n    }\\n"}',
+//     method: "POST",
+//     mode: "cors",
+//     credentials: "include",
+//   }).then(() => {});
+function getOrgs() {
+    const options = {
+        method: 'POST',
+        url: 'https://api.dyte.io/graphql',
+        headers: {
+            "accept": "*/*",
+            "accept-language": "en-GB,en-US;q=0.9,en;q=0.8",
+            "authorization": `Bearer ${DEV_PORTAL}`,
+          "cache-control": "no-cache",
+          "content-type": "application/json",
+          "pragma": "no-cache",
+          "sec-ch-ua":'"Not/A)Brand";v="99", "Google Chrome";v="115", "Chromium";v="115"',
+          "sec-ch-ua-mobile": "?0",
+          "sec-ch-ua-platform": '"macOS"',
+          "sec-fetch-dest": "empty",
+          "sec-fetch-mode": "cors",
+          "sec-fetch-site": "same-site",
+        },
+        data: '{"query":"\\n    query {\\n        loggedUser {\\n            id\\n            name\\n            ownedOrgs {\\n                id\\n                name\\n                accessToken\\n            }\\n        }\\n    }\\n"}',
+        mode: "cors",
+        credentials: "include"
+    };
+    
+    axios
+            .request(options)
+            .then(function ({ data } : {data:Response}) {
+                console.log(data);
+                console.log(data.data.loggedUser.name)
+                for (let org of data.data.loggedUser.ownedOrgs) {
+                    console.log(org);
                 }
-            },
-        ],
-        response_type: "in_channel", // change to "in_channel" to make it visible to others
-    });
-});
+                console.log(data.data.loggedUser.ownedOrgs.length)
+            })
+            .catch(function (error: any) {
+                console.error(error);
+            });
+}
 
-app.command("/callstats", async ({client, respond, ack, context}) => {
-    const { data } = await axios.get(
-        CALLSTATS_PEER_REPORT + PEER_ID,
-        {headers: {"Authorization": `Bearer ${CALLSTATS_TOKEN}`}}
-    )
-    await client.files.uploadV2({
-        filename: `peer_reports_${PEER_ID}.json`,
-        content: JSON.stringify(data.data.peerReport),
-        channel_id: process.env.GENERAL_CHANNEL,
-    });
 
-    await ack()
-});
 
-app.start().catch((error) => {
-    console.error(error);
-    process.exit(1);
-});
